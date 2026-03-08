@@ -269,17 +269,17 @@ export default function App() {
   const [searchQ, setSearchQ] = useState("");
   const [nextId, setNextId] = useState(100);
 
+  const emptyForm = {
+    title: "", desc: "", priority: "medium", status: "todo",
+    category: "Other", assignee: currentUser?.id || "Pavanbhai", createdBy: currentUser?.id || "Pavanbhai",
+    dueDate: "", tags: [], tagInput: "", comments: [],
+  };
+  const [form, setForm] = useState(emptyForm);
+
   // Show login if not logged in
   if (!currentUser) {
     return <LoginScreen onLogin={setCurrentUser} />;
   }
-
-  const emptyForm = {
-    title: "", desc: "", priority: "medium", status: "todo",
-    category: "Other", assignee: currentUser.id, createdBy: currentUser.id,
-    dueDate: "", tags: [], tagInput: "", comments: [],
-  };
-  const [form, setForm] = useState(emptyForm);
 
   const filtered = tasks.filter(t => {
     if (filterAssignee !== "all" && t.assignee !== filterAssignee) return false;
