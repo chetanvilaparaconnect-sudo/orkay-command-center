@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 
+// ── LOGIN USERS ──
+const USERS = [
+  { id: "Pavanbhai", password: "Boss@1996",     name: "Boss",            role: "Management" },
+  { id: "Chetan",    password: "Chetan@2026",   name: "Chetan Vilpara",  role: "Digital Marketing Manager" },
+  { id: "Hussain",   password: "Hussain@00183", name: "Hussian Bharmal", role: "Export Manager" },
+  { id: "Yogesh",    password: "Yogesh@00183",  name: "Yogesh Aal",      role: "Export Manager" },
+  { id: "Harsh",     password: "Harsh@00183",   name: "Harsh Parmar",    role: "Export Manager" },
+  { id: "Jignesh",   password: "Jignesh@00183", name: "Jignesh Parmar",  role: "Export Manager" },
+];
+
 const TEAM_MEMBERS = [
-  { id: "boss", name: "Boss", role: "Management", avatar: "B", color: "#FF6B35" },
-  { id: "you", name: "You", role: "Digital Marketing Manager", avatar: "Y", color: "#4ECDC4" },
-  { id: "tm1", name: "Arjun Shah", role: "Social Media", avatar: "AS", color: "#45B7D1" },
-  { id: "tm2", name: "Priya Mehta", role: "Content & AI", avatar: "PM", color: "#96CEB4" },
-  { id: "tm3", name: "Rohan Patel", role: "CRM & Automation", avatar: "RP", color: "#FFEAA7" },
-  { id: "tm4", name: "Neha Gupta", role: "Lead Generation", avatar: "NG", color: "#DDA0DD" },
+  { id: "Pavanbhai", name: "Boss",            role: "Management",               avatar: "PV", color: "#FF6B35" },
+  { id: "Chetan",    name: "Chetan Vilpara",  role: "Digital Marketing Manager",avatar: "CV", color: "#4ECDC4" },
+  { id: "Hussain",   name: "Hussian Bharmal", role: "Export Manager",           avatar: "HB", color: "#45B7D1" },
+  { id: "Yogesh",    name: "Yogesh Aal",      role: "Export Manager",           avatar: "YA", color: "#96CEB4" },
+  { id: "Harsh",     name: "Harsh Parmar",    role: "Export Manager",           avatar: "HP", color: "#FFEAA7" },
+  { id: "Jignesh",   name: "Jignesh Parmar",  role: "Export Manager",           avatar: "JP", color: "#DDA0DD" },
 ];
 
 const PRIORITY_CONFIG = {
@@ -17,10 +27,10 @@ const PRIORITY_CONFIG = {
 };
 
 const STATUS_CONFIG = {
-  todo:        { label: "To Do",       color: "#8892A4", bg: "#8892A418", icon: "○" },
-  inprogress:  { label: "In Progress", color: "#4ECDC4", bg: "#4ECDC418", icon: "◑" },
-  review:      { label: "In Review",   color: "#FF8C00", bg: "#FF8C0018", icon: "◕" },
-  done:        { label: "Done",        color: "#4CAF50", bg: "#4CAF5018", icon: "●" },
+  todo:       { label: "To Do",       color: "#8892A4", bg: "#8892A418", icon: "○" },
+  inprogress: { label: "In Progress", color: "#4ECDC4", bg: "#4ECDC418", icon: "◑" },
+  review:     { label: "In Review",   color: "#FF8C00", bg: "#FF8C0018", icon: "◕" },
+  done:       { label: "Done",        color: "#4CAF50", bg: "#4CAF5018", icon: "●" },
 };
 
 const CATEGORIES = [
@@ -33,16 +43,16 @@ const SAMPLE_TASKS = [
     id: 1, title: "Scrape Australia tiles importers data",
     desc: "Use import tracking software to pull all AU tiles & sanitaryware importers. Remove logistics companies.",
     priority: "critical", status: "done", category: "Lead Generation",
-    assignee: "tm4", createdBy: "you",
+    assignee: "Yogesh", createdBy: "Pavanbhai",
     dueDate: "2025-03-05", createdAt: "2025-02-28",
     tags: ["Australia", "Data", "Import"],
-    comments: [{ author: "you", text: "Data pulled — 1310 raw entries", time: "2d ago" }],
+    comments: [{ author: "Chetan", text: "Data pulled — 1310 raw entries", time: "2d ago" }],
   },
   {
     id: 2, title: "Set up Apollo.io for Poland importers",
     desc: "Create Apollo account, search Polish tiles & sanitaryware importers, export 200 leads with decision makers.",
     priority: "high", status: "inprogress", category: "Lead Generation",
-    assignee: "tm4", createdBy: "you",
+    assignee: "Yogesh", createdBy: "Pavanbhai",
     dueDate: "2025-03-10", createdAt: "2025-03-01",
     tags: ["Poland", "Apollo", "Contacts"],
     comments: [],
@@ -51,7 +61,7 @@ const SAMPLE_TASKS = [
     id: 3, title: "Design WhatsApp outreach sequence (Tiles)",
     desc: "Write 3-message WhatsApp campaign for tiles importers in Australia & Poland. Include catalog PDF.",
     priority: "high", status: "todo", category: "WhatsApp Campaign",
-    assignee: "tm2", createdBy: "you",
+    assignee: "Chetan", createdBy: "Pavanbhai",
     dueDate: "2025-03-12", createdAt: "2025-03-01",
     tags: ["WhatsApp", "Campaign", "Tiles"],
     comments: [],
@@ -60,16 +70,16 @@ const SAMPLE_TASKS = [
     id: 4, title: "GoHighLevel pipeline setup for B2B leads",
     desc: "Build tiles importer pipeline in GHL with stages: New Lead → Contacted → Sample Sent → Negotiation → Closed.",
     priority: "critical", status: "inprogress", category: "CRM Setup",
-    assignee: "tm3", createdBy: "you",
+    assignee: "Hussain", createdBy: "Pavanbhai",
     dueDate: "2025-03-08", createdAt: "2025-02-27",
     tags: ["GHL", "CRM", "Pipeline"],
-    comments: [{ author: "tm3", text: "Pipeline stages created. Adding automation triggers.", time: "1d ago" }],
+    comments: [{ author: "Hussain", text: "Pipeline stages created. Adding automation triggers.", time: "1d ago" }],
   },
   {
     id: 5, title: "LinkedIn content — Export marketing authority",
     desc: "Post 3x per week on LinkedIn about tiles industry insights, export trends, and company capabilities.",
     priority: "medium", status: "todo", category: "Social Media",
-    assignee: "tm1", createdBy: "you",
+    assignee: "Chetan", createdBy: "Pavanbhai",
     dueDate: "2025-03-15", createdAt: "2025-03-02",
     tags: ["LinkedIn", "Content", "Export"],
     comments: [],
@@ -78,7 +88,7 @@ const SAMPLE_TASKS = [
     id: 6, title: "Review Q1 campaign performance report",
     desc: "Compile results from all Q1 campaigns — WhatsApp, email, LinkedIn. Present to boss with next quarter plan.",
     priority: "high", status: "todo", category: "Reporting",
-    assignee: "you", createdBy: "boss",
+    assignee: "Chetan", createdBy: "Pavanbhai",
     dueDate: "2025-03-20", createdAt: "2025-03-01",
     tags: ["Report", "Q1", "Review"],
     comments: [],
@@ -93,17 +103,163 @@ function formatDate(dateStr) {
 
 function getDaysLeft(dueDate) {
   if (!dueDate) return null;
-  const diff = Math.ceil((new Date(dueDate) - new Date()) / 86400000);
-  return diff;
+  return Math.ceil((new Date(dueDate) - new Date()) / 86400000);
 }
 
 function getMember(id) {
   return TEAM_MEMBERS.find(m => m.id === id) || TEAM_MEMBERS[0];
 }
 
+/* ── LOGIN SCREEN ── */
+function LoginScreen({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = () => {
+    setError("");
+    setLoading(true);
+    setTimeout(() => {
+      const user = USERS.find(u => u.id === username && u.password === password);
+      if (user) {
+        onLogin(user);
+      } else {
+        setError("❌ Invalid username or password. Please try again.");
+        setLoading(false);
+      }
+    }, 800);
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh", background: "#0D1117",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+    }}>
+      {/* Background glow */}
+      <div style={{
+        position: "fixed", top: "20%", left: "50%", transform: "translateX(-50%)",
+        width: 600, height: 600, borderRadius: "50%",
+        background: "radial-gradient(circle, #FF6B3520 0%, transparent 70%)",
+        pointerEvents: "none",
+      }} />
+
+      <div style={{
+        background: "#161B22", borderRadius: 24, padding: 40, width: 420,
+        border: "1px solid #30363D", boxShadow: "0 30px 100px #00000080",
+        position: "relative", zIndex: 1,
+      }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 18,
+            background: "linear-gradient(135deg, #FF6B35, #FF8C00)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 32, margin: "0 auto 16px", boxShadow: "0 8px 30px #FF6B3550",
+          }}>⚡</div>
+          <div style={{ fontWeight: 800, fontSize: 24, color: "#E6EDF3", letterSpacing: "-0.5px" }}>
+            TaskFlow Pro
+          </div>
+          <div style={{ fontSize: 13, color: "#8B949E", marginTop: 4 }}>
+            Sign in to your workspace
+          </div>
+        </div>
+
+        {/* Username */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Username
+          </label>
+          <input
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
+            placeholder="Enter your username"
+            style={{
+              width: "100%", marginTop: 8, background: "#0D1117",
+              border: `1px solid ${error ? "#FF3B3B" : "#30363D"}`,
+              borderRadius: 12, padding: "12px 16px", color: "#E6EDF3",
+              fontSize: 14, outline: "none", boxSizing: "border-box",
+              transition: "border 0.2s",
+            }}
+            onFocus={e => e.target.style.border = "1px solid #FF6B35"}
+            onBlur={e => e.target.style.border = `1px solid ${error ? "#FF3B3B" : "#30363D"}`}
+          />
+        </div>
+
+        {/* Password */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Password
+          </label>
+          <div style={{ position: "relative", marginTop: 8 }}>
+            <input
+              type={showPass ? "text" : "password"}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+              placeholder="Enter your password"
+              style={{
+                width: "100%", background: "#0D1117",
+                border: `1px solid ${error ? "#FF3B3B" : "#30363D"}`,
+                borderRadius: 12, padding: "12px 48px 12px 16px", color: "#E6EDF3",
+                fontSize: 14, outline: "none", boxSizing: "border-box",
+                transition: "border 0.2s",
+              }}
+              onFocus={e => e.target.style.border = "1px solid #FF6B35"}
+              onBlur={e => e.target.style.border = `1px solid ${error ? "#FF3B3B" : "#30363D"}`}
+            />
+            <button
+              onClick={() => setShowPass(!showPass)}
+              style={{
+                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: "#8B949E", fontSize: 16,
+              }}
+            >{showPass ? "🙈" : "👁️"}</button>
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: "#FF3B3B18", border: "1px solid #FF3B3B40",
+            borderRadius: 10, padding: "10px 14px", marginBottom: 16,
+            fontSize: 12, color: "#FF3B3B",
+          }}>{error}</div>
+        )}
+
+        {/* Login Button */}
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          style={{
+            width: "100%", background: loading ? "#484F58" : "linear-gradient(135deg, #FF6B35, #FF8C00)",
+            border: "none", borderRadius: 12, padding: "14px",
+            color: "#fff", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer",
+            boxShadow: loading ? "none" : "0 4px 20px #FF6B3550",
+            transition: "all 0.2s",
+          }}
+        >
+          {loading ? "⏳ Signing in..." : "Sign In →"}
+        </button>
+
+        {/* Footer */}
+        <div style={{ textAlign: "center", marginTop: 24, fontSize: 11, color: "#484F58" }}>
+          Contact your admin if you forgot your password
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── MAIN APP ── */
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
   const [tasks, setTasks] = useState(SAMPLE_TASKS);
-  const [view, setView] = useState("board"); // board | list | dashboard
+  const [view, setView] = useState("board");
   const [filterAssignee, setFilterAssignee] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -113,9 +269,14 @@ export default function App() {
   const [searchQ, setSearchQ] = useState("");
   const [nextId, setNextId] = useState(100);
 
+  // Show login if not logged in
+  if (!currentUser) {
+    return <LoginScreen onLogin={setCurrentUser} />;
+  }
+
   const emptyForm = {
     title: "", desc: "", priority: "medium", status: "todo",
-    category: "Other", assignee: "you", createdBy: "you",
+    category: "Other", assignee: currentUser.id, createdBy: currentUser.id,
     dueDate: "", tags: [], tagInput: "", comments: [],
   };
   const [form, setForm] = useState(emptyForm);
@@ -138,7 +299,6 @@ export default function App() {
 
   const saveTask = () => {
     if (!form.title.trim()) return;
-    // eslint-disable-next-line no-unused-vars
     const { tagInput, ...cleanForm } = form;
     if (editingTask) {
       setTasks(prev => prev.map(t => t.id === editingTask ? { ...cleanForm, id: editingTask, createdAt: t.createdAt } : t));
@@ -167,7 +327,7 @@ export default function App() {
     const now = new Date();
     const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) +
       " · " + now.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
-    const comment = { author: "you", text, time: timeStr };
+    const comment = { author: currentUser.id, text, time: timeStr };
     setTasks(prev => prev.map(t => t.id === taskId
       ? { ...t, comments: [...(t.comments || []), comment] }
       : t
@@ -185,6 +345,8 @@ export default function App() {
     critical: tasks.filter(t => t.priority === "critical" && t.status !== "done").length,
     overdue: tasks.filter(t => getDaysLeft(t.dueDate) < 0 && t.status !== "done").length,
   };
+
+  const memberInfo = getMember(currentUser.id);
 
   return (
     <div style={{
@@ -221,12 +383,33 @@ export default function App() {
           ))}
         </div>
 
-        <button onClick={openCreate} style={{
-          background: "linear-gradient(135deg, #FF6B35, #FF8C00)",
-          color: "#fff", border: "none", borderRadius: 10, padding: "8px 18px",
-          fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex",
-          alignItems: "center", gap: 6, boxShadow: "0 4px 15px #FF6B3540",
-        }}>+ New Task</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Logged in user */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%", background: memberInfo.color,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, fontWeight: 700, color: "#0D1117",
+            }}>{memberInfo.avatar}</div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{currentUser.name}</div>
+              <div style={{ fontSize: 10, color: "#8B949E" }}>{currentUser.role}</div>
+            </div>
+          </div>
+
+          {/* Logout */}
+          <button onClick={() => setCurrentUser(null)} style={{
+            background: "#21262D", border: "1px solid #30363D", borderRadius: 8,
+            padding: "6px 12px", color: "#8B949E", cursor: "pointer", fontSize: 12, fontWeight: 600,
+          }}>🚪 Logout</button>
+
+          <button onClick={openCreate} style={{
+            background: "linear-gradient(135deg, #FF6B35, #FF8C00)",
+            color: "#fff", border: "none", borderRadius: 10, padding: "8px 18px",
+            fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex",
+            alignItems: "center", gap: 6, boxShadow: "0 4px 15px #FF6B3540",
+          }}>+ New Task</button>
+        </div>
       </nav>
 
       {/* ── STATS BAR ── */}
@@ -254,7 +437,6 @@ export default function App() {
           </div>
         ))}
 
-        {/* Team avatars */}
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 11, color: "#8B949E" }}>Team:</span>
           <div style={{ display: "flex" }}>
@@ -262,16 +444,14 @@ export default function App() {
               <div key={m.id} title={`Filter: ${m.name}`}
                 onClick={() => { setFilterAssignee(m.id); setFilterStatus("all"); setFilterPriority("all"); setView("list"); }}
                 style={{
-                width: 30, height: 30, borderRadius: "50%", background: m.color,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 700, color: "#0D1117",
-                marginLeft: i === 0 ? 0 : -8,
-                border: "2px solid #161B22", cursor: "pointer",
-                zIndex: TEAM_MEMBERS.length - i,
-                transition: "transform 0.15s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.2)"; e.currentTarget.style.zIndex = 99; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.zIndex = TEAM_MEMBERS.length - i; }}
+                  width: 30, height: 30, borderRadius: "50%", background: m.color,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 700, color: "#0D1117",
+                  marginLeft: i === 0 ? 0 : -8, border: "2px solid #161B22", cursor: "pointer",
+                  zIndex: TEAM_MEMBERS.length - i, transition: "transform 0.15s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.2)"; e.currentTarget.style.zIndex = 99; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.zIndex = TEAM_MEMBERS.length - i; }}
               >{m.avatar}</div>
             ))}
           </div>
@@ -314,7 +494,6 @@ export default function App() {
       {/* ── MAIN CONTENT ── */}
       <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
 
-        {/* DASHBOARD VIEW */}
         {view === "dashboard" && (
           <DashboardView
             tasks={tasks}
@@ -324,7 +503,6 @@ export default function App() {
           />
         )}
 
-        {/* BOARD VIEW */}
         {view === "board" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, minWidth: 900 }}>
             {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
@@ -366,7 +544,6 @@ export default function App() {
           </div>
         )}
 
-        {/* LIST VIEW */}
         {view === "list" && (
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             <div style={{
@@ -401,10 +578,10 @@ export default function App() {
         )}
       </div>
 
-      {/* ── TASK DETAIL PANEL ── */}
       {selectedTask && (
         <TaskDetail
           task={selectedTask}
+          currentUser={currentUser}
           onClose={() => setSelectedTask(null)}
           onEdit={() => { openEdit(selectedTask); setSelectedTask(null); }}
           onDelete={() => deleteTask(selectedTask.id)}
@@ -413,7 +590,6 @@ export default function App() {
         />
       )}
 
-      {/* ── CREATE / EDIT MODAL ── */}
       {showModal && (
         <TaskModal
           form={form} setForm={setForm}
@@ -426,10 +602,9 @@ export default function App() {
   );
 }
 
-/* ── TASK CARD (Board) ── */
+/* ── TASK CARD ── */
 function TaskCard({ task, onClick, onEdit, onDelete, onStatusChange }) {
   const p = PRIORITY_CONFIG[task.priority];
-  const s = STATUS_CONFIG[task.status];
   const m = getMember(task.assignee);
   const days = getDaysLeft(task.dueDate);
   const overdue = days !== null && days < 0 && task.status !== "done";
@@ -438,80 +613,39 @@ function TaskCard({ task, onClick, onEdit, onDelete, onStatusChange }) {
     <div onClick={onClick} style={{
       background: "#161B22", borderRadius: 12, padding: 14,
       border: `1px solid ${overdue ? "#FF3B3B50" : "#30363D"}`,
-      cursor: "pointer", transition: "all 0.2s",
-      borderLeft: `3px solid ${p.color}`,
+      cursor: "pointer", transition: "all 0.2s", borderLeft: `3px solid ${p.color}`,
     }}
     onMouseEnter={e => { e.currentTarget.style.background = "#1C2128"; }}
     onMouseLeave={e => { e.currentTarget.style.background = "#161B22"; }}
     >
-      {/* Priority + Category */}
       <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-        <span style={{
-          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
-          background: p.bg, color: p.color, border: `1px solid ${p.color}40`,
-        }}>{p.icon} {p.label}</span>
-        <span style={{
-          fontSize: 10, padding: "2px 8px", borderRadius: 20,
-          background: "#21262D", color: "#8B949E",
-        }}>{task.category}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: p.bg, color: p.color, border: `1px solid ${p.color}40` }}>{p.icon} {p.label}</span>
+        <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "#21262D", color: "#8B949E" }}>{task.category}</span>
       </div>
-
-      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, lineHeight: 1.4 }}>
-        {task.title}
-      </div>
-      <div style={{ fontSize: 11, color: "#8B949E", marginBottom: 10,
-        overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box",
-        WebkitLineClamp: 2, WebkitBoxOrient: "vertical"
-      }}>{task.desc}</div>
-
-      {/* Tags */}
+      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, lineHeight: 1.4 }}>{task.title}</div>
+      <div style={{ fontSize: 11, color: "#8B949E", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{task.desc}</div>
       {task.tags?.length > 0 && (
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
           {task.tags.slice(0,3).map(tag => (
-            <span key={tag} style={{
-              fontSize: 10, padding: "1px 6px", borderRadius: 4,
-              background: "#21262D", color: "#58A6FF",
-            }}>#{tag}</span>
+            <span key={tag} style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "#21262D", color: "#58A6FF" }}>#{tag}</span>
           ))}
         </div>
       )}
-
-      {/* Footer */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-        <div style={{
-          width: 24, height: 24, borderRadius: "50%", background: m.color,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 9, fontWeight: 700, color: "#0D1117",
-        }}>{m.avatar}</div>
+        <div style={{ width: 24, height: 24, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#0D1117" }}>{m.avatar}</div>
         <span style={{ fontSize: 11, color: "#8B949E", flex: 1 }}>{m.name}</span>
-
         {task.dueDate && (
-          <span style={{
-            fontSize: 10, fontWeight: 600,
-            color: overdue ? "#FF3B3B" : days <= 2 ? "#FF8C00" : "#8B949E",
-          }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: overdue ? "#FF3B3B" : days <= 2 ? "#FF8C00" : "#8B949E" }}>
             {overdue ? `⚠️ ${Math.abs(days)}d overdue` : days === 0 ? "⚡ Today" : `📅 ${days}d`}
           </span>
         )}
-
-        {/* Quick actions */}
         <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
-          <button onClick={() => onEdit()} title="Edit" style={{
-            background: "none", border: "none", cursor: "pointer", color: "#8B949E",
-            fontSize: 12, padding: "2px 4px", borderRadius: 4,
-          }}>✏️</button>
-          <button onClick={() => onDelete()} title="Delete" style={{
-            background: "none", border: "none", cursor: "pointer", color: "#8B949E",
-            fontSize: 12, padding: "2px 4px", borderRadius: 4,
-          }}>🗑️</button>
+          <button onClick={onEdit} style={{ background: "none", border: "none", cursor: "pointer", color: "#8B949E", fontSize: 12, padding: "2px 4px", borderRadius: 4 }}>✏️</button>
+          <button onClick={onDelete} style={{ background: "none", border: "none", cursor: "pointer", color: "#8B949E", fontSize: 12, padding: "2px 4px", borderRadius: 4 }}>🗑️</button>
         </div>
       </div>
-
-      {/* Comments indicator */}
       {task.comments?.length > 0 && (
-        <div style={{ marginTop: 8, fontSize: 10, color: "#8B949E" }}>
-          💬 {task.comments.length} comment{task.comments.length !== 1 ? "s" : ""}
-        </div>
+        <div style={{ marginTop: 8, fontSize: 10, color: "#8B949E" }}>💬 {task.comments.length} comment{task.comments.length !== 1 ? "s" : ""}</div>
       )}
     </div>
   );
@@ -530,8 +664,7 @@ function ListRow({ task, onClick, onEdit, onDelete, onStatusChange }) {
       display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 100px",
       padding: "12px 16px", borderRadius: 10, cursor: "pointer",
       background: "#161B22", marginBottom: 6, border: "1px solid #30363D",
-      transition: "all 0.15s", alignItems: "center",
-      borderLeft: `3px solid ${p.color}`,
+      transition: "all 0.15s", alignItems: "center", borderLeft: `3px solid ${p.color}`,
     }}
     onMouseEnter={e => e.currentTarget.style.background = "#1C2128"}
     onMouseLeave={e => e.currentTarget.style.background = "#161B22"}
@@ -541,25 +674,12 @@ function ListRow({ task, onClick, onEdit, onDelete, onStatusChange }) {
         <div style={{ fontSize: 11, color: "#8B949E" }}>{task.category}</div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <div style={{
-          width: 24, height: 24, borderRadius: "50%", background: m.color,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 9, fontWeight: 700, color: "#0D1117",
-        }}>{m.avatar}</div>
+        <div style={{ width: 24, height: 24, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#0D1117" }}>{m.avatar}</div>
         <span style={{ fontSize: 12 }}>{m.name}</span>
       </div>
-      <span style={{
-        fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
-        background: p.bg, color: p.color, display: "inline-block",
-      }}>{p.icon} {p.label}</span>
-      <span style={{
-        fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
-        background: s.bg, color: s.color, display: "inline-block",
-      }}>{s.icon} {s.label}</span>
-      <span style={{
-        fontSize: 11, fontWeight: 600,
-        color: overdue ? "#FF3B3B" : days <= 2 ? "#FF8C00" : "#8B949E",
-      }}>
+      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: p.bg, color: p.color, display: "inline-block" }}>{p.icon} {p.label}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.color, display: "inline-block" }}>{s.icon} {s.label}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: overdue ? "#FF3B3B" : days <= 2 ? "#FF8C00" : "#8B949E" }}>
         {task.dueDate ? (overdue ? `⚠️ ${Math.abs(days)}d ago` : formatDate(task.dueDate)) : "—"}
       </span>
       <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
@@ -572,42 +692,26 @@ function ListRow({ task, onClick, onEdit, onDelete, onStatusChange }) {
 
 /* ── DASHBOARD VIEW ── */
 function DashboardView({ tasks, onFilterStatus, onFilterPriority, onFilterMember }) {
-  const byStatus = Object.fromEntries(
-    Object.keys(STATUS_CONFIG).map(s => [s, tasks.filter(t => t.status === s).length])
-  );
-  const byPriority = Object.fromEntries(
-    Object.keys(PRIORITY_CONFIG).map(p => [p, tasks.filter(t => t.priority === p).length])
-  );
+  const byStatus = Object.fromEntries(Object.keys(STATUS_CONFIG).map(s => [s, tasks.filter(t => t.status === s).length]));
+  const byPriority = Object.fromEntries(Object.keys(PRIORITY_CONFIG).map(p => [p, tasks.filter(t => t.priority === p).length]));
   const byMember = TEAM_MEMBERS.map(m => ({
     ...m,
     total: tasks.filter(t => t.assignee === m.id).length,
     done: tasks.filter(t => t.assignee === m.id && t.status === "done").length,
-    inprogress: tasks.filter(t => t.assignee === m.id && t.status === "inprogress").length,
     critical: tasks.filter(t => t.assignee === m.id && t.priority === "critical" && t.status !== "done").length,
   }));
-
-  const upcoming = tasks
-    .filter(t => t.status !== "done" && t.dueDate)
-    .sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate))
-    .slice(0, 5);
-
+  const upcoming = tasks.filter(t => t.status !== "done" && t.dueDate).sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5);
   const completion = tasks.length ? Math.round((byStatus.done / tasks.length) * 100) : 0;
-
-  const clickableCard = {
-    cursor: "pointer", transition: "all 0.15s",
-  };
+  const clickableCard = { cursor: "pointer", transition: "all 0.15s" };
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, maxWidth: 1200 }}>
-      {/* Overall Progress */}
       <div style={{ background: "#161B22", borderRadius: 16, padding: 24, border: "1px solid #30363D" }}>
         <div style={{ fontSize: 13, color: "#8B949E", fontWeight: 600, marginBottom: 16 }}>📊 OVERALL PROGRESS</div>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 56, fontWeight: 800, color: "#4ECDC4" }}>{completion}%</div>
           <div style={{ fontSize: 13, color: "#8B949E" }}>Tasks Completed</div>
-          <div style={{
-            margin: "16px 0", height: 12, background: "#21262D", borderRadius: 10, overflow: "hidden"
-          }}>
+          <div style={{ margin: "16px 0", height: 12, background: "#21262D", borderRadius: 10, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${completion}%`, background: "linear-gradient(90deg, #4ECDC4, #45B7D1)", borderRadius: 10, transition: "width 1s" }} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
@@ -625,7 +729,6 @@ function DashboardView({ tasks, onFilterStatus, onFilterPriority, onFilterMember
         </div>
       </div>
 
-      {/* Team Workload */}
       <div style={{ background: "#161B22", borderRadius: 16, padding: 24, border: "1px solid #30363D" }}>
         <div style={{ fontSize: 13, color: "#8B949E", fontWeight: 600, marginBottom: 16 }}>👥 TEAM WORKLOAD <span style={{ fontSize: 10, fontWeight: 400 }}>— click to filter</span></div>
         {byMember.map(m => (
@@ -635,11 +738,7 @@ function DashboardView({ tasks, onFilterStatus, onFilterPriority, onFilterMember
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.border = "1px solid transparent"; }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: "50%", background: m.color,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 700, color: "#0D1117",
-              }}>{m.avatar}</div>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#0D1117" }}>{m.avatar}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 600 }}>{m.name}</div>
                 <div style={{ fontSize: 10, color: "#8B949E" }}>{m.role}</div>
@@ -650,17 +749,12 @@ function DashboardView({ tasks, onFilterStatus, onFilterPriority, onFilterMember
               </div>
             </div>
             <div style={{ height: 6, background: "#21262D", borderRadius: 10, overflow: "hidden" }}>
-              <div style={{
-                height: "100%", borderRadius: 10, background: m.color,
-                width: `${tasks.length ? (m.done / Math.max(m.total, 1)) * 100 : 0}%`,
-                transition: "width 0.8s",
-              }} />
+              <div style={{ height: "100%", borderRadius: 10, background: m.color, width: `${m.total ? (m.done / m.total) * 100 : 0}%`, transition: "width 0.8s" }} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Priority Breakdown */}
       <div style={{ background: "#161B22", borderRadius: 16, padding: 24, border: "1px solid #30363D" }}>
         <div style={{ fontSize: 13, color: "#8B949E", fontWeight: 600, marginBottom: 16 }}>🎯 PRIORITY BREAKDOWN <span style={{ fontSize: 10, fontWeight: 400 }}>— click to filter</span></div>
         {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => (
@@ -674,32 +768,21 @@ function DashboardView({ tasks, onFilterStatus, onFilterPriority, onFilterMember
               <span style={{ fontSize: 12, fontWeight: 700, color: cfg.color }}>{byPriority[key]}</span>
             </div>
             <div style={{ height: 8, background: "#21262D", borderRadius: 10, overflow: "hidden" }}>
-              <div style={{
-                height: "100%", borderRadius: 10, background: cfg.color,
-                width: `${tasks.length ? (byPriority[key] / tasks.length) * 100 : 0}%`,
-                transition: "width 0.8s",
-              }} />
+              <div style={{ height: "100%", borderRadius: 10, background: cfg.color, width: `${tasks.length ? (byPriority[key] / tasks.length) * 100 : 0}%`, transition: "width 0.8s" }} />
             </div>
           </div>
         ))}
-
         <div style={{ marginTop: 20, padding: "14px", background: "#0D1117", borderRadius: 10, border: "1px solid #30363D" }}>
           <div style={{ fontSize: 11, color: "#8B949E", marginBottom: 8, fontWeight: 600 }}>⏰ UPCOMING DEADLINES</div>
           {upcoming.slice(0,4).map(t => {
             const days = getDaysLeft(t.dueDate);
             return (
-              <div key={t.id} onClick={() => onFilterStatus(t.status)}
-                style={{ ...clickableCard, display: "flex", justifyContent: "space-between", marginBottom: 6, alignItems: "center", padding: "4px 6px", borderRadius: 6 }}
+              <div key={t.id} style={{ ...clickableCard, display: "flex", justifyContent: "space-between", marginBottom: 6, alignItems: "center", padding: "4px 6px", borderRadius: 6 }}
                 onMouseEnter={e => e.currentTarget.style.background = "#21262D"}
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
               >
-                <div style={{ fontSize: 11, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {t.title}
-                </div>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, marginLeft: 8,
-                  color: days < 0 ? "#FF3B3B" : days <= 2 ? "#FF8C00" : "#8B949E",
-                }}>
+                <div style={{ fontSize: 11, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</div>
+                <span style={{ fontSize: 10, fontWeight: 700, marginLeft: 8, color: days < 0 ? "#FF3B3B" : days <= 2 ? "#FF8C00" : "#8B949E" }}>
                   {days < 0 ? `${Math.abs(days)}d late` : days === 0 ? "Today!" : `${days}d`}
                 </span>
               </div>
@@ -711,8 +794,8 @@ function DashboardView({ tasks, onFilterStatus, onFilterPriority, onFilterMember
   );
 }
 
-/* ── TASK DETAIL PANEL ── */
-function TaskDetail({ task, onClose, onEdit, onDelete, onStatusChange, onComment }) {
+/* ── TASK DETAIL ── */
+function TaskDetail({ task, currentUser, onClose, onEdit, onDelete, onStatusChange, onComment }) {
   const [commentText, setCommentText] = useState("");
   const p = PRIORITY_CONFIG[task.priority];
   const s = STATUS_CONFIG[task.status];
@@ -721,30 +804,19 @@ function TaskDetail({ task, onClose, onEdit, onDelete, onStatusChange, onComment
   const days = getDaysLeft(task.dueDate);
 
   return (
-    <div style={{
-      position: "fixed", right: 0, top: 0, bottom: 0, width: 420,
-      background: "#161B22", borderLeft: "1px solid #30363D",
-      zIndex: 200, display: "flex", flexDirection: "column",
-      boxShadow: "-20px 0 60px #00000060",
-    }}>
-      {/* Header */}
+    <div style={{ position: "fixed", right: 0, top: 0, bottom: 0, width: 420, background: "#161B22", borderLeft: "1px solid #30363D", zIndex: 200, display: "flex", flexDirection: "column", boxShadow: "-20px 0 60px #00000060" }}>
       <div style={{ padding: "16px 20px", borderBottom: "1px solid #30363D", display: "flex", gap: 8 }}>
         <button onClick={onClose} style={{ background: "#21262D", border: "none", borderRadius: 8, padding: "6px 10px", cursor: "pointer", color: "#E6EDF3" }}>✕</button>
         <button onClick={onEdit} style={{ background: "#21262D", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", color: "#4ECDC4", fontWeight: 600, fontSize: 12 }}>✏️ Edit</button>
         <button onClick={() => { onDelete(); onClose(); }} style={{ background: "#FF3B3B18", border: "1px solid #FF3B3B40", borderRadius: 8, padding: "6px 12px", cursor: "pointer", color: "#FF3B3B", fontWeight: 600, fontSize: 12 }}>🗑️ Delete</button>
       </div>
-
       <div style={{ flex: 1, overflow: "auto", padding: 20 }}>
-        {/* Priority + Category */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: p.bg, color: p.color, border: `1px solid ${p.color}40` }}>{p.icon} {p.label}</span>
           <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 20, background: "#21262D", color: "#8B949E" }}>{task.category}</span>
         </div>
-
         <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, lineHeight: 1.4 }}>{task.title}</h2>
         <p style={{ fontSize: 13, color: "#8B949E", lineHeight: 1.6, marginBottom: 20 }}>{task.desc}</p>
-
-        {/* Status changer */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, color: "#8B949E", marginBottom: 8, fontWeight: 600 }}>STATUS</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -758,8 +830,6 @@ function TaskDetail({ task, onClose, onEdit, onDelete, onStatusChange, onComment
             ))}
           </div>
         </div>
-
-        {/* Meta */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
           {[
             { label: "Assignee", content: <><div style={{ width: 20, height: 20, borderRadius: "50%", background: m.color, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#0D1117", marginRight: 6 }}>{m.avatar}</div>{m.name}</> },
@@ -773,8 +843,6 @@ function TaskDetail({ task, onClose, onEdit, onDelete, onStatusChange, onComment
             </div>
           ))}
         </div>
-
-        {/* Tags */}
         {task.tags?.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 11, color: "#8B949E", marginBottom: 8, fontWeight: 600 }}>TAGS</div>
@@ -783,8 +851,6 @@ function TaskDetail({ task, onClose, onEdit, onDelete, onStatusChange, onComment
             </div>
           </div>
         )}
-
-        {/* Comments */}
         <div>
           <div style={{ fontSize: 11, color: "#8B949E", marginBottom: 12, fontWeight: 600 }}>💬 COMMENTS ({task.comments?.length || 0})</div>
           {task.comments?.map((c, i) => {
@@ -799,11 +865,9 @@ function TaskDetail({ task, onClose, onEdit, onDelete, onStatusChange, onComment
               </div>
             );
           })}
-
-          {/* Add comment */}
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <input value={commentText} onChange={e => setCommentText(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { onComment(task.id, commentText); setCommentText(""); } }}
+              onKeyDown={e => { if (e.key === "Enter") { onComment(task.id, commentText); setCommentText(""); } }}
               placeholder="Add a comment... (Enter to send)"
               style={{ flex: 1, background: "#0D1117", border: "1px solid #30363D", borderRadius: 8, padding: "8px 12px", color: "#E6EDF3", fontSize: 12, outline: "none" }}
             />
@@ -818,7 +882,6 @@ function TaskDetail({ task, onClose, onEdit, onDelete, onStatusChange, onComment
 /* ── TASK MODAL ── */
 function TaskModal({ form, setForm, editing, onSave, onClose }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
   const addTag = () => {
     if (form.tagInput.trim() && !form.tags.includes(form.tagInput.trim())) {
       set("tags", [...form.tags, form.tagInput.trim()]);
@@ -827,35 +890,18 @@ function TaskModal({ form, setForm, editing, onSave, onClose }) {
   };
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "#00000080", zIndex: 300,
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: "#161B22", borderRadius: 20, padding: 28, width: 540,
-        maxHeight: "85vh", overflow: "auto", border: "1px solid #30363D",
-        boxShadow: "0 25px 80px #000000A0",
-      }}>
+    <div style={{ position: "fixed", inset: 0, background: "#00000080", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#161B22", borderRadius: 20, padding: 28, width: 540, maxHeight: "85vh", overflow: "auto", border: "1px solid #30363D", boxShadow: "0 25px 80px #000000A0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{editing ? "✏️ Edit Task" : "✨ Create New Task"}</h2>
           <button onClick={onClose} style={{ background: "#21262D", border: "none", borderRadius: 8, padding: "6px 10px", cursor: "pointer", color: "#E6EDF3" }}>✕</button>
         </div>
-
-        {/* Title */}
         <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Task Title *</label>
-        <input value={form.title} onChange={e => set("title", e.target.value)}
-          placeholder="Enter task title..."
-          style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 14, outline: "none", marginTop: 6, marginBottom: 16, boxSizing: "border-box" }}
-        />
-
-        {/* Description */}
+        <input value={form.title} onChange={e => set("title", e.target.value)} placeholder="Enter task title..."
+          style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 14, outline: "none", marginTop: 6, marginBottom: 16, boxSizing: "border-box" }} />
         <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Description</label>
-        <textarea value={form.desc} onChange={e => set("desc", e.target.value)}
-          placeholder="Task description, instructions, goals..."
-          rows={3} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, marginBottom: 16, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }}
-        />
-
-        {/* Priority + Status */}
+        <textarea value={form.desc} onChange={e => set("desc", e.target.value)} placeholder="Task description..." rows={3}
+          style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, marginBottom: 16, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
           <div>
             <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Priority</label>
@@ -870,8 +916,6 @@ function TaskModal({ form, setForm, editing, onSave, onClose }) {
             </select>
           </div>
         </div>
-
-        {/* Assignee + Category */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
           <div>
             <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Assign To</label>
@@ -886,8 +930,6 @@ function TaskModal({ form, setForm, editing, onSave, onClose }) {
             </select>
           </div>
         </div>
-
-        {/* Due Date + Created By */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
           <div>
             <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Due Date</label>
@@ -900,15 +942,10 @@ function TaskModal({ form, setForm, editing, onSave, onClose }) {
             </select>
           </div>
         </div>
-
-        {/* Tags */}
         <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Tags</label>
         <div style={{ display: "flex", gap: 8, marginTop: 6, marginBottom: 8 }}>
-          <input value={form.tagInput} onChange={e => set("tagInput", e.target.value)}
-            onKeyDown={e => e.key === "Enter" && addTag()}
-            placeholder="Add tag and press Enter..."
-            style={{ flex: 1, background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "8px 14px", color: "#E6EDF3", fontSize: 13, outline: "none" }}
-          />
+          <input value={form.tagInput} onChange={e => set("tagInput", e.target.value)} onKeyDown={e => e.key === "Enter" && addTag()} placeholder="Add tag and press Enter..."
+            style={{ flex: 1, background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "8px 14px", color: "#E6EDF3", fontSize: 13, outline: "none" }} />
           <button onClick={addTag} style={{ background: "#21262D", border: "1px solid #30363D", borderRadius: 10, padding: "8px 14px", color: "#E6EDF3", cursor: "pointer", fontSize: 13 }}>+ Add</button>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 24 }}>
@@ -919,8 +956,6 @@ function TaskModal({ form, setForm, editing, onSave, onClose }) {
             </span>
           ))}
         </div>
-
-        {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onClose} style={{ flex: 1, background: "#21262D", border: "1px solid #30363D", borderRadius: 10, padding: "11px", color: "#E6EDF3", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>Cancel</button>
           <button onClick={onSave} style={{ flex: 2, background: "linear-gradient(135deg, #FF6B35, #FF8C00)", border: "none", borderRadius: 10, padding: "11px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 14, boxShadow: "0 4px 15px #FF6B3540" }}>
