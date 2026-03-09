@@ -1,9 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://gcpjmclksnaeupwbjorg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_mfQF-n6a2ym0ltbZmTtXww_GIay03Yv";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(
+  "https://gcpjmclksnaeupwbjorg.supabase.co",
+  "sb_publishable_mfQF-n6a2ym0ltbZmTtXww_GIay03Yv",
+  {
+    realtime: { params: { eventsPerSecond: 10 } }
+  }
+);
 
 const PRIORITY_CONFIG = {
   critical: { label: "Critical", color: "#FF3B3B", bg: "#FF3B3B18", icon: "🔴", order: 1 },
@@ -19,11 +23,7 @@ const STATUS_CONFIG = {
   done:       { label: "Done",        color: "#4CAF50", bg: "#4CAF5018", icon: "●" },
 };
 
-const CATEGORIES = [
-  "Social Media","Content","Email Campaign","WhatsApp Campaign",
-  "Lead Generation","CRM Setup","SEO","Ads","Research","Reporting","Other"
-];
-
+const CATEGORIES = ["Social Media","Content","Email Campaign","WhatsApp Campaign","Lead Generation","CRM Setup","SEO","Ads","Research","Reporting","Other"];
 const COLORS = ["#FF6B35","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#FF6B6B","#A8E6CF","#FFD93D","#6BCB77"];
 
 function formatDate(d) {
@@ -96,29 +96,63 @@ export default function App() {
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: "", description: "", priority: "medium", status: "todo", category: "Other", assignees: [], created_by: "", due_date: "", start_date: "", tags: [], tagInput: "" });
+  const channelRef = useRef(null);
 
-  const loadMembers = useCallback(async () => {
+  const getMember = id => members.find(m => m.id === id) || { name: id, avatar: "?", color: "#888" };
+
+  // Load data
+  const loadMembers = async () => {
     const { data } = await supabase.from("members").select("*").order("created_at");
     if (data) setMembers(data);
-  }, []);
+  };
 
-  const loadTasks = useCallback(async () => {
+  const loadTasks = async () => {
     const { data } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
-    if (data) setTasks(data);
-    setLoading(false);
-  }, []);
+    if (data) { setTasks(data); setLoading(false); }
+  };
 
+  // Setup real-time
   useEffect(() => {
     loadMembers();
     loadTasks();
-    const taskSub = supabase.channel("tasks-rt").on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, loadTasks).subscribe();
-    const memberSub = supabase.channel("members-rt").on("postgres_changes", { event: "*", schema: "public", table: "members" }, loadMembers).subscribe();
-    return () => { taskSub.unsubscribe(); memberSub.unsubscribe(); };
-  }, [loadMembers, loadTasks]);
+
+    // Clean up old channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    // Create new real-time channel
+    const channel = supabase
+      .channel("db-changes", { config: { broadcast: { self: true } } })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tasks" }, payload => {
+        setTasks(prev => [payload.new, ...prev]);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tasks" }, payload => {
+        setTasks(prev => prev.map(t => t.id === payload.new.id ? payload.new : t));
+        setSelectedTask(prev => prev?.id === payload.new.id ? payload.new : prev);
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "tasks" }, payload => {
+        setTasks(prev => prev.filter(t => t.id !== payload.old.id));
+        setSelectedTask(prev => prev?.id === payload.old.id ? null : prev);
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "members" }, payload => {
+        setMembers(prev => [...prev, payload.new]);
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "members" }, payload => {
+        setMembers(prev => prev.filter(m => m.id !== payload.old.id));
+      })
+      .subscribe(status => {
+        console.log("Realtime status:", status);
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+    };
+  }, []);
 
   if (!currentUser) return <LoginScreen onLogin={user => { setCurrentUser(user); setForm(f => ({ ...f, assignees: [user.id], created_by: user.id })); }} />;
-
-  const getMember = id => members.find(m => m.id === id) || { name: id, avatar: "?", color: "#888" };
 
   const visibleTasks = tasks.filter(t => {
     const isInvolved = t.assignees?.includes(currentUser.id) || t.created_by === currentUser.id || currentUser.id === "Pavanbhai";
@@ -130,8 +164,17 @@ export default function App() {
     return true;
   });
 
-  const openCreate = () => { setForm({ title: "", description: "", priority: "medium", status: "todo", category: "Other", assignees: [currentUser.id], created_by: currentUser.id, due_date: "", start_date: "", tags: [], tagInput: "" }); setEditingTask(null); setShowModal(true); };
-  const openEdit = task => { setForm({ ...task, tagInput: "", tags: task.tags || [], assignees: task.assignees || [] }); setEditingTask(task.id); setShowModal(true); };
+  const openCreate = () => {
+    setForm({ title: "", description: "", priority: "medium", status: "todo", category: "Other", assignees: [currentUser.id], created_by: currentUser.id, due_date: "", start_date: "", tags: [], tagInput: "" });
+    setEditingTask(null);
+    setShowModal(true);
+  };
+
+  const openEdit = task => {
+    setForm({ ...task, tagInput: "", tags: task.tags || [], assignees: task.assignees || [] });
+    setEditingTask(task.id);
+    setShowModal(true);
+  };
 
   const saveTask = async () => {
     if (!form.title.trim()) return;
@@ -142,20 +185,16 @@ export default function App() {
       await supabase.from("tasks").insert([{ ...cleanForm, comments: [] }]);
     }
     setShowModal(false);
-    loadTasks();
   };
 
   const deleteTask = async id => {
     if (!window.confirm("Delete this task?")) return;
     await supabase.from("tasks").delete().eq("id", id);
     if (selectedTask?.id === id) setSelectedTask(null);
-    loadTasks();
   };
 
   const updateStatus = async (id, status) => {
     await supabase.from("tasks").update({ status }).eq("id", id);
-    setSelectedTask(prev => prev?.id === id ? { ...prev, status } : prev);
-    loadTasks();
   };
 
   const addComment = async (taskId, text) => {
@@ -165,8 +204,6 @@ export default function App() {
     const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + " · " + now.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
     const updatedComments = [...(task?.comments || []), { author: currentUser.id, text, time: timeStr }];
     await supabase.from("tasks").update({ comments: updatedComments }).eq("id", taskId);
-    setSelectedTask(prev => prev?.id === taskId ? { ...prev, comments: updatedComments } : prev);
-    loadTasks();
   };
 
   const stats = {
@@ -185,6 +222,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0D1117", color: "#E6EDF3", fontFamily: "'DM Sans','Segoe UI',sans-serif", display: "flex", flexDirection: "column" }}>
+      {/* NAV */}
       <nav style={{ background: "#161B22", borderBottom: "1px solid #30363D", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#FF6B35,#FF8C00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>⚡</div>
@@ -206,6 +244,7 @@ export default function App() {
         </div>
       </nav>
 
+      {/* STATS */}
       <div style={{ background: "#161B22", borderBottom: "1px solid #30363D", padding: "12px 24px", display: "flex", gap: 16, overflowX: "auto" }}>
         {[
           { label: "My Tasks", value: stats.total, color: "#4ECDC4", icon: "📋" },
@@ -233,6 +272,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* FILTERS */}
       <div style={{ padding: "12px 24px", background: "#0D1117", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", borderBottom: "1px solid #30363D" }}>
         <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="🔍 Search tasks..."
           style={{ background: "#161B22", border: "1px solid #30363D", borderRadius: 8, padding: "7px 14px", color: "#E6EDF3", fontSize: 13, width: 200, outline: "none" }} />
@@ -248,6 +288,7 @@ export default function App() {
         <span style={{ fontSize: 12, color: "#8B949E", marginLeft: "auto" }}>{visibleTasks.length} tasks</span>
       </div>
 
+      {/* CONTENT */}
       <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
         {view === "board" && <BoardView tasks={visibleTasks} getMember={getMember} onSelect={setSelectedTask} onEdit={openEdit} onDelete={deleteTask} />}
         {view === "list" && <ListView tasks={visibleTasks} getMember={getMember} onSelect={setSelectedTask} onEdit={openEdit} onDelete={deleteTask} />}
@@ -296,7 +337,7 @@ function TaskCard({ task, getMember, onClick, onEdit, onDelete }) {
       <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: p.bg, color: p.color }}>{p.icon} {p.label}</span>
         <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "#21262D", color: "#8B949E" }}>{task.category}</span>
-        {assignees.length > 1 && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "#4ECDC418", color: "#4ECDC4" }}>👥 {assignees.length} members</span>}
+        {assignees.length > 1 && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "#4ECDC418", color: "#4ECDC4" }}>👥 {assignees.length}</span>}
       </div>
       <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, lineHeight: 1.4 }}>{task.title}</div>
       <div style={{ fontSize: 11, color: "#8B949E", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{task.description}</div>
@@ -307,11 +348,8 @@ function TaskCard({ task, getMember, onClick, onEdit, onDelete }) {
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
         <div style={{ display: "flex" }}>
-          {assignees.slice(0,3).map((aid, i) => {
-            const m = getMember(aid);
-            return <div key={aid} title={m.name} style={{ width: 22, height: 22, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#0D1117", marginLeft: i === 0 ? 0 : -6, border: "1px solid #161B22" }}>{m.avatar}</div>;
-          })}
-          {assignees.length > 3 && <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#30363D", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#8B949E", marginLeft: -6, border: "1px solid #161B22" }}>+{assignees.length-3}</div>}
+          {assignees.slice(0,3).map((aid, i) => { const m = getMember(aid); return <div key={aid} title={m.name} style={{ width: 22, height: 22, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#0D1117", marginLeft: i === 0 ? 0 : -6, border: "1px solid #161B22" }}>{m.avatar}</div>; })}
+          {assignees.length > 3 && <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#30363D", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#8B949E", marginLeft: -6 }}>+{assignees.length-3}</div>}
         </div>
         {task.due_date && <span style={{ fontSize: 10, fontWeight: 600, marginLeft: "auto", color: overdue ? "#FF3B3B" : days <= 2 ? "#FF8C00" : "#8B949E" }}>{overdue ? `⚠️ ${Math.abs(days)}d late` : days === 0 ? "⚡ Today" : `📅 ${days}d`}</span>}
         <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
@@ -339,13 +377,10 @@ function ListView({ tasks, getMember, onSelect, onEdit, onDelete }) {
         return (
           <div key={task.id} onClick={() => onSelect(task)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 100px", padding: "12px 16px", borderRadius: 10, cursor: "pointer", background: "#161B22", marginBottom: 6, border: "1px solid #30363D", alignItems: "center", borderLeft: `3px solid ${p.color}` }}
             onMouseEnter={e => e.currentTarget.style.background = "#1C2128"} onMouseLeave={e => e.currentTarget.style.background = "#161B22"}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 13 }}>{task.title}</div>
-              <div style={{ fontSize: 11, color: "#8B949E" }}>{task.category}{assignees.length > 1 ? " · 👥 Team" : ""}</div>
-            </div>
+            <div><div style={{ fontWeight: 600, fontSize: 13 }}>{task.title}</div><div style={{ fontSize: 11, color: "#8B949E" }}>{task.category}{assignees.length > 1 ? " · 👥 Team" : ""}</div></div>
             <div style={{ display: "flex" }}>
               {assignees.slice(0,3).map((aid, i) => { const m = getMember(aid); return <div key={aid} title={m.name} style={{ width: 24, height: 24, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#0D1117", marginLeft: i === 0 ? 0 : -8, border: "2px solid #161B22" }}>{m.avatar}</div>; })}
-              {assignees.length > 3 && <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#30363D", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#8B949E", marginLeft: -8, border: "2px solid #161B22" }}>+{assignees.length-3}</div>}
+              {assignees.length > 3 && <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#30363D", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#8B949E", marginLeft: -8 }}>+{assignees.length-3}</div>}
             </div>
             <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: p.bg, color: p.color, display: "inline-block" }}>{p.icon} {p.label}</span>
             <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.color, display: "inline-block" }}>{s.icon} {s.label}</span>
@@ -369,20 +404,18 @@ function TimelineView({ tasks, getMember, onSelect }) {
   const tasksWithDates = tasks.filter(t => t.start_date || t.due_date);
   return (
     <div style={{ overflowX: "auto" }}>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#E6EDF3" }}>📅 Timeline — {today.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>📅 Timeline — {today.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</div>
       {tasksWithDates.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: "#484F58" }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
           <div style={{ fontSize: 16 }}>No tasks with dates yet</div>
-          <div style={{ fontSize: 13, marginTop: 8 }}>Add start & due dates when creating tasks to see them here</div>
+          <div style={{ fontSize: 13, marginTop: 8 }}>Add start & due dates when creating tasks</div>
         </div>
       ) : (
         <div style={{ minWidth: 900 }}>
           <div style={{ display: "flex", marginBottom: 8 }}>
             <div style={{ width: 220, flexShrink: 0 }} />
-            {days.map((d, i) => (
-              <div key={i} style={{ flex: 1, minWidth: 28, textAlign: "center", fontSize: 10, color: d.toDateString() === today.toDateString() ? "#FF6B35" : "#8B949E", fontWeight: d.toDateString() === today.toDateString() ? 700 : 400 }}>{d.getDate()}</div>
-            ))}
+            {days.map((d, i) => <div key={i} style={{ flex: 1, minWidth: 28, textAlign: "center", fontSize: 10, color: d.toDateString() === today.toDateString() ? "#FF6B35" : "#8B949E", fontWeight: d.toDateString() === today.toDateString() ? 700 : 400 }}>{d.getDate()}</div>)}
           </div>
           {tasksWithDates.map(task => {
             const p = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
@@ -395,15 +428,13 @@ function TimelineView({ tasks, getMember, onSelect }) {
             return (
               <div key={task.id} style={{ display: "flex", alignItems: "center", marginBottom: 8, height: 36 }}>
                 <div style={{ width: 220, flexShrink: 0, display: "flex", alignItems: "center", gap: 6, paddingRight: 12, overflow: "hidden" }}>
-                  <div style={{ display: "flex" }}>
-                    {assignees.slice(0,2).map((aid, i) => { const m = getMember(aid); return <div key={aid} style={{ width: 20, height: 20, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#0D1117", marginLeft: i === 0 ? 0 : -6, border: "1px solid #0D1117" }}>{m.avatar}</div>; })}
-                  </div>
-                  <span style={{ fontSize: 11, color: "#E6EDF3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }} onClick={() => onSelect(task)}>{task.title}</span>
+                  <div style={{ display: "flex" }}>{assignees.slice(0,2).map((aid, i) => { const m = getMember(aid); return <div key={aid} style={{ width: 20, height: 20, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#0D1117", marginLeft: i === 0 ? 0 : -6, border: "1px solid #0D1117" }}>{m.avatar}</div>; })}</div>
+                  <span style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }} onClick={() => onSelect(task)}>{task.title}</span>
                 </div>
                 <div style={{ flex: 1, position: "relative", height: "100%", display: "flex", alignItems: "center" }}>
                   {days.map((_, i) => <div key={i} style={{ flex: 1, minWidth: 28, height: "100%", borderRight: "1px solid #21262D" }} />)}
                   {startDay <= 29 && endDay >= 0 && (
-                    <div onClick={() => onSelect(task)} style={{ position: "absolute", left: `${(startDay/30)*100}%`, width: `${(width/30)*100}%`, height: 24, background: p.bg, border: `1px solid ${p.color}`, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8, fontSize: 10, color: p.color, fontWeight: 600, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
+                    <div onClick={() => onSelect(task)} style={{ position: "absolute", left: `${(startDay/30)*100}%`, width: `${(width/30)*100}%`, height: 24, background: p.bg, border: `1px solid ${p.color}`, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8, fontSize: 10, color: p.color, fontWeight: 600, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap", boxSizing: "border-box" }}>
                       {p.icon} {task.title}
                     </div>
                   )}
@@ -593,7 +624,7 @@ function TaskModal({ form, setForm, editing, members, onSave, onClose }) {
         <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Assign To — select multiple for team task</label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 16 }}>
           {members.map(m => { const sel = form.assignees?.includes(m.id); return (
-            <div key={m.id} onClick={() => toggleAssignee(m.id)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, cursor: "pointer", border: `1px solid ${sel ? m.color : "#30363D"}`, background: sel ? m.color + "20" : "transparent" }}>
+            <div key={m.id} onClick={() => toggleAssignee(m.id)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, cursor: "pointer", border: `1px solid ${sel ? m.color : "#30363D"}`, background: sel ? m.color+"20" : "transparent" }}>
               <div style={{ width: 20, height: 20, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#0D1117" }}>{m.avatar}</div>
               <span style={{ fontSize: 12, color: sel ? m.color : "#8B949E", fontWeight: sel ? 600 : 400 }}>{m.name}</span>
               {sel && <span style={{ color: m.color, fontSize: 12 }}>✓</span>}
@@ -601,42 +632,30 @@ function TaskModal({ form, setForm, editing, members, onSave, onClose }) {
           ); })}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-          <div>
-            <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Priority</label>
+          <div><label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Priority</label>
             <select value={form.priority} onChange={e => set("priority", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, cursor: "pointer" }}>
               {Object.entries(PRIORITY_CONFIG).map(([k,v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Status</label>
+            </select></div>
+          <div><label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Status</label>
             <select value={form.status} onChange={e => set("status", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, cursor: "pointer" }}>
               {Object.entries(STATUS_CONFIG).map(([k,v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-            </select>
-          </div>
+            </select></div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-          <div>
-            <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Start Date</label>
-            <input type="date" value={form.start_date||""} onChange={e => set("start_date", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, boxSizing: "border-box", colorScheme: "dark" }} />
-          </div>
-          <div>
-            <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Due Date</label>
-            <input type="date" value={form.due_date||""} onChange={e => set("due_date", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, boxSizing: "border-box", colorScheme: "dark" }} />
-          </div>
+          <div><label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Start Date</label>
+            <input type="date" value={form.start_date||""} onChange={e => set("start_date", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, boxSizing: "border-box", colorScheme: "dark" }} /></div>
+          <div><label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Due Date</label>
+            <input type="date" value={form.due_date||""} onChange={e => set("due_date", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, boxSizing: "border-box", colorScheme: "dark" }} /></div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-          <div>
-            <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Category</label>
+          <div><label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Category</label>
             <select value={form.category} onChange={e => set("category", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, cursor: "pointer" }}>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Created By</label>
+            </select></div>
+          <div><label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Created By</label>
             <select value={form.created_by} onChange={e => set("created_by", e.target.value)} style={{ width: "100%", background: "#0D1117", border: "1px solid #30363D", borderRadius: 10, padding: "10px 14px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 6, cursor: "pointer" }}>
               {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-          </div>
+            </select></div>
         </div>
         <label style={{ fontSize: 11, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>Tags</label>
         <div style={{ display: "flex", gap: 8, marginTop: 6, marginBottom: 8 }}>
@@ -698,12 +717,10 @@ function MemberModal({ members, onClose, onRefresh }) {
         <div style={{ background: "#0D1117", borderRadius: 12, padding: 16, border: "1px solid #30363D" }}>
           <div style={{ fontSize: 12, color: "#8B949E", fontWeight: 600, marginBottom: 12, textTransform: "uppercase" }}>➕ Add New Member</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-            {[["Username (login)", "id", "e.g. Mehul"],["Full Name","name","e.g. Mehul Savsani"],["Role","role","e.g. Export Manager"],["Password","password","e.g. Mehul@00183"]].map(([label, key, ph]) => (
-              <div key={key}>
-                <label style={{ fontSize: 10, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>{label}</label>
+            {[["Username (login)","id","e.g. Mehul"],["Full Name","name","e.g. Mehul Savsani"],["Role","role","e.g. Export Manager"],["Password","password","e.g. Mehul@00183"]].map(([label,key,ph]) => (
+              <div key={key}><label style={{ fontSize: 10, color: "#8B949E", fontWeight: 600, textTransform: "uppercase" }}>{label}</label>
                 <input value={newMember[key]} onChange={e => setNewMember(p => ({ ...p, [key]: e.target.value }))} placeholder={ph}
-                  style={{ width: "100%", background: "#161B22", border: "1px solid #30363D", borderRadius: 8, padding: "8px 12px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 4, boxSizing: "border-box" }} />
-              </div>
+                  style={{ width: "100%", background: "#161B22", border: "1px solid #30363D", borderRadius: 8, padding: "8px 12px", color: "#E6EDF3", fontSize: 13, outline: "none", marginTop: 4, boxSizing: "border-box" }} /></div>
             ))}
           </div>
           <div style={{ marginBottom: 12 }}>
